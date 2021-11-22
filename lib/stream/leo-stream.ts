@@ -2027,6 +2027,8 @@ export class LeoStream {
 
 		let cnt = 0;
 		let kinesisStream = this.pipeline(toLeo, end);
+		// TODO: TS - should we handle the todo below?
+		// @ts-ignore
 		let leoS3S = leoS3(this, outQueue, this.configure); //TODO: if this ever gets used, pass in a opts paramater with a prefix of the botId
 		let s3Stream = this.pipeline(leoS3S, kinesisStream);
 		let stream = kinesisStream; //this.pipeline(toLeo, end);

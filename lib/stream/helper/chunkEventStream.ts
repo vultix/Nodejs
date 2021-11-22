@@ -1,9 +1,12 @@
 'use strict';
-const logger = require('leo-logger')('chunkEventStream');
-const refUtil = require('../../reference');
-const zlib = require('zlib');
+import leo_logger from 'leo-logger';
+import refUtil from '../../reference';
+import zlib from 'zlib';
+import LeoStream from '../leo-stream';
 
-module.exports = function(ls, event, opts) {
+const logger = leo_logger('chunkEventStream');
+
+export default function chunkEventStream(ls: LeoStream, event, opts) {
 	var tenMB = 1024 * 1024 * 10;
 	var twoHundredK = 1024 * 200;
 	opts = Object.assign({
@@ -214,3 +217,5 @@ module.exports = function(ls, event, opts) {
 
 	return eventStream;
 };
+
+module.exports = chunkEventStream;

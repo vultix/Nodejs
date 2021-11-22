@@ -1,13 +1,15 @@
 "use strict";
-var moment = require("moment");
-var chunkEventStream = require("./chunkEventStream");
-const uuid = require("uuid");
+import moment from 'moment';
+import chunkEventStream from './chunkEventStream';
+import uuid from 'uuid';
+import leo_logger from 'leo-logger';
+import LeoStream from '../leo-stream';
 
-const logger = require('leo-logger')('leoS3');
+const logger = leo_logger('leoS3');
 
 var pad = "0000000";
 var padLength = -1 * pad.length;
-module.exports = function(ls, queue, configure, opts, onFlush) {
+export default function leoS3(ls: LeoStream, queue, configure, opts, onFlush?: any) {
 	var s3, count, e;
 	opts = Object.assign({
 		useS3Mode: true,
@@ -179,3 +181,4 @@ module.exports = function(ls, queue, configure, opts, onFlush) {
 
 	return ls.pipeline(chunkEventStream(ls, queue, opts), stream);
 };
+module.exports = leoS3;
