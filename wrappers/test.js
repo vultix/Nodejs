@@ -5,7 +5,7 @@ let cachedHandler;
 module.exports = function(configOverride, botHandler) {
 	process.resources = process.env.Resources && JSON.parse(process.env.Resources) || {};
 
-	let config = require("../leoConfigure.js");
+	let config = require("../leoConfigure.ts");
 	const logger = require('leo-logger')('test.wrapper');
 	const leosdk = require("../index.ts");
 	const refUtil = require("../lib/reference");

@@ -5,7 +5,7 @@ let cachedHandler;
 module.exports = function(configOverride, botHandler) {
 	process.resources = process.env.Resources && JSON.parse(process.env.Resources) || {};
 
-	let config = require("../leoConfigure.js");
+	let config = require("../leoConfigure.ts");
 	//const async = require("async");
 	const logger = require('leo-logger')('cron.wrapper');
 	const leosdk = require("../index.ts");

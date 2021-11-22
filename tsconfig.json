@@ -1,9 +1,16 @@
 {
   "include": [
-    "index", "api.js", "configure.js", "leoConfigure.js", "lib/**/*", "wrappers/**/*"],
+    "index.ts",
+    "api.ts",
+    "configure.ts",
+    "generateProfile.ts",
+    "leoConfigure.ts",
+    "lib/**/*",
+    "wrappers/**/*"],
   "compilerOptions": {
     "allowJs": true,
     "declaration": true,
+    "module": "CommonJS",
     "outDir": "dist",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true

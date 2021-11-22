@@ -1,11 +1,12 @@
 "use strict";
-let homeDir = require('os').homedir();
-let path = require("path");
-let fs = require("fs");
-let extend = require("extend");
-let async = require("async");
-const readline = require('readline');
+import {homedir} from 'os';
+import path from 'path';
+import fs from 'fs';
+import extend from 'extend';
+import async from 'async';
+import readline from 'readline';
 
+let homeDir = homedir();
 let configPath = path.resolve(`${homeDir}/.leo`, "config.json");
 let configDir = path.dirname(configPath);
 let parsed = parse();
@@ -17,6 +18,7 @@ if (commands[0] == "show") {
 	let p = options.leoprofile || "default";
 	console.log(`\nProfile: ${p}`);
 	console.log(JSON.stringify(get()[p] || {}, null, 2));
+	// @ts-ignore
 	return;
 }
 
@@ -93,7 +95,7 @@ function createPath(dir) {
 	}
 }
 
-function parse() {
+function parse(): any {
 	let optionsMap = {
 		p: {
 			name: "leoprofile",

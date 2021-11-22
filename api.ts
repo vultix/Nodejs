@@ -1,9 +1,9 @@
 "use strict";
-var util = require('util');
-var extend = require("extend");
-var moment = require("moment");
+import util from 'util';
+import extend from 'extend';
+import moment from 'moment';
 
-module.exports = function (data) {
+export default function (data) {
 	data = Object.assign({}, data);
 	var bus = data.bus = data.bus || {};
 	var aws = data.aws = data.aws || {};

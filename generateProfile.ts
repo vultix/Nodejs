@@ -1,13 +1,14 @@
 "use strict";
-let homeDir = require('os').homedir();
-let path = require("path");
-let fs = require("fs");
-let extend = require("extend");
-var aws = require("./lib/leo-aws");
-var async = require('async');
-var crypto = require("crypto");
-var moment = require("moment");
+import {homedir} from 'os';
+import path from 'path';
+import fs from 'fs';
+import extend from 'extend';
+import aws from './lib/leo-aws';
+import async from 'async';
+import crypto from 'crypto';
+import moment from 'moment';
 
+let homeDir = homedir();
 let configPath = path.resolve(`${homeDir}/.leo`, "config.json");
 let configDir = path.dirname(configPath);
 let parsed = parse();
@@ -19,12 +20,14 @@ let commands = parsed.commands;
 if (commands[0] == "show") {
 	let p = options.leoprofile || "default";
 	console.log(`\nProfile: ${p}`);
+	// TODO: TS - get isn't defined
+	// @ts-ignore
 	console.log(JSON.stringify(get()[p] || {}, null, 2));
 } else {
 	require("./lib/generateProfile.js")(commands[0], options, null, () => {});
 }
 
-function parse() {
+function parse(): any {
 	let optionsMap = {
 		p: {
 			name: "leoprofile",
