@@ -5,7 +5,7 @@ const moment = require("moment");
 const logger = require("leo-logger")("======= [ leo-fanout ] =======");
 /**
  * @param {function(BotEvent, LambdaContext, Callback)} handler function to the code handler
- * @param {function(QueueEvent): any} eventPartition function to return the value representing what partition for the event 
+ * @param {function(QueueEvent): any} eventPartition function to return the value representing what partition for the event
  */
 const fanoutFactory = (handler, eventPartition, opts = {}) => {
 	if (typeof eventPartition !== "function") {
@@ -19,7 +19,7 @@ const fanoutFactory = (handler, eventPartition, opts = {}) => {
 
 	//logger.log("Fanout start");
 	eventPartition = eventPartition || (event => event.eid);
-	let leo = require("../index.js");
+	let leo = require("../index.ts");
 	let leoBotCheckpoint = leo.bot.checkpoint;
 	let leoStreamsFromLeo = leo.streams.fromLeo;
 	let leoBotCheckLock = leo.bot.checkLock;
@@ -166,7 +166,7 @@ const fanoutFactory = (handler, eventPartition, opts = {}) => {
 				new Promise(resolve => {
 					setTimeout(() => {
 						logger.log(`Invoking 1/${instances}`);
-						let wasCalled = false; 
+						let wasCalled = false;
 						const handlerCallback = (err, data) => {
 							if (!wasCalled) {
 								wasCalled = true;
@@ -193,7 +193,7 @@ const fanoutFactory = (handler, eventPartition, opts = {}) => {
 
 			// Wait for all workers to return and figure out what checkpoint to persist
 			logger.debug(`Waiting on all Fanout workers: count ${workers.length}`);
-			Promise.all(workers).then(callCheckpointOnResponses(leoBotCheckpoint, callback)).catch((err) => { 
+			Promise.all(workers).then(callCheckpointOnResponses(leoBotCheckpoint, callback)).catch((err) => {
 				logger.error("[err]", err);
 				return callback(err);
 			});
@@ -201,7 +201,7 @@ const fanoutFactory = (handler, eventPartition, opts = {}) => {
 	};
 };
 
-function callCheckpointOnResponses(leoBotCheckpoint, callback) { 
+function callCheckpointOnResponses(leoBotCheckpoint, callback) {
 	return function (responses) {
 		logger.log("Return from all workers, reducing checkpoints");
 		let checkpoints = reduceCheckpoints(responses).map((data) => {
@@ -292,7 +292,7 @@ function invokeSelf(event, iid, count, context) {
 						} else if (!err && data.Payload != undefined && data.Payload != 'null') {
 							data = JSON.parse(data.Payload);
 						}
-		
+
 						resolve(data);
 					} catch (err) {
 						reject(err);
@@ -335,7 +335,7 @@ function invokeSelf(event, iid, count, context) {
 }
 
 /**
- * 
+ *
  * @param {[checkpoint]} responses Array of responses from the workers
  * @returns {[checkpoint]} Consolidated checkpoint
  */
@@ -368,7 +368,7 @@ function reduceCheckpoints(responses) {
 						}
 					});
 				}
-				
+
 			});
 		}
 		return agg;
@@ -383,7 +383,7 @@ function reduceCheckpoints(responses) {
 		delete checkpoints.errors;
 	}
 	let vals = Object.values(checkpoints);
-	
+
 	if(vals) {
 		return Object.values(vals);
 	} else {

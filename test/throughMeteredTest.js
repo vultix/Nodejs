@@ -1,4 +1,4 @@
-var stream = require("../lib/streams.js");
+var stream = require("../lib/streams.ts");
 
 describe("local", function() {
   it("Should able to meter through and emit when meter hits", function(done) {

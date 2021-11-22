@@ -1,4 +1,4 @@
-var LeoConfiguration = require("../../lib/configuration.js");
+var LeoConfiguration = require("../../lib/configuration.ts");
 
 function DW(configure) {
 	let configuration = new LeoConfiguration(configure);

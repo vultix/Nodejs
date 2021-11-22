@@ -1,4 +1,4 @@
-const leo = require("../index.js");
+const leo = require("../index.ts");
 var moment = require("moment");
 
 describe("local", function() {

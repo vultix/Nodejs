@@ -1,0 +1,11 @@
+{
+  "include": [
+    "index", "api.js", "configure.js", "leoConfigure.js", "lib/**/*", "wrappers/**/*"],
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
+  }
+}

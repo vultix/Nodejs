@@ -8,9 +8,9 @@ module.exports = function(configOverride, botHandler) {
 	let config = require("../leoConfigure.js");
 	//const async = require("async");
 	const logger = require('leo-logger')('cron.wrapper');
-	const leosdk = require("../index.js");
+	const leosdk = require("../index.ts");
 	//const kms = require("../lib/kms")(leosdk.configuration);
-	const refUtil = require("../lib/reference.js");
+	const refUtil = require("../lib/reference");
 
 	process.__config = config;
 	const fill = require("../lib/build-config").fillWithTableReferences;

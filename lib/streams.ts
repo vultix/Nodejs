@@ -1,15 +1,31 @@
 "use strict";
-const merge = require('lodash.merge');
-var through = require('through2').obj;
-var pump = require("pump");
-var pumpify = require("pumpify").obj;
-var split = require("split2");
-var zlib = require("zlib");
-var fastCsv = require("fast-csv");
-var write = require("./flushwrite.js");
-var AWS = require("./leo-aws");
-var https = require("https");
-var PassThrough = require('stream').PassThrough;
+import merge from 'lodash.merge';
+import * as fastCsv from 'fast-csv';
+import leo_logger from 'leo-logger';
+import backoff from 'backoff';
+import moment from 'moment';
+import stream, {PassThrough} from 'stream';
+import https from 'https';
+import AWS from './leo-aws';
+import {FlushWriteStream} from './flushwrite.js';
+import zlib from 'zlib';
+import split2 from 'split2';
+import {obj as pumpify} from 'pumpify';
+import pump from 'pump';
+import {obj as through2} from 'through2';
+import {
+	BufferedStream,
+	ErrorCallback,
+	FlushCallback,
+	LeoEvent,
+	LeoStreamOptions,
+	LeoTransformFunction,
+	ReadableStream,
+	TransformFunction,
+	TransformStream,
+	WritableStream
+} from './types';
+
 var s3 = new AWS.S3({
 	apiVersion: '2006-03-01',
 	httpOptions: {
@@ -18,14 +34,10 @@ var s3 = new AWS.S3({
 		})
 	}
 });
-var stream = require("stream");
-var moment = require("moment");
-var backoff = require("backoff");
+const logger = leo_logger('stream');
 
-const logger = require('leo-logger')('stream');
-
-let ls = module.exports = {
-	commandWrap: function(opts, func) {
+export namespace ls {
+	export function commandWrap(opts: LeoStreamOptions | LeoTransformFunction<any, any>, func?: LeoTransformFunction<any, any>): TransformFunction {
 		if (typeof opts === "function") {
 			func = opts;
 			opts = {};
@@ -33,7 +45,7 @@ let ls = module.exports = {
 		opts = merge({
 			hasCommands: '__cmd',
 			ignoreCommands: {}
-		}, opts || {});
+		}, opts || {}) as LeoStreamOptions;
 
 		if (Array.isArray(opts.ignoreCommands)) {
 			opts.ignoreCommands = opts.ignoreCommands.reduce((all, one) => {
@@ -43,25 +55,26 @@ let ls = module.exports = {
 		}
 
 
-		let commands = {};
-		//By Default just pass the command along
-		commands['cmd'] = opts.cmd || ((obj, done) => {
-			done(null, obj);
-		});
+		let commands = {
+			//By Default just pass the command along
+			cmd: opts.cmd || ((obj, done) => {
+				done(null, obj);
+			})
+		};
 		for (var key in opts) {
 			if (key.match(/^cmd/)) {
 				let cmd = key.replace(/^cmd/, '').toLowerCase();
 				commands[cmd] = opts[key];
 			}
 		}
-		let throughCommand;
+		let throughCommand: TransformFunction;
 		//They need to specify false to turn this off
 		if (opts.hasCommands !== false) {
 			throughCommand = function(obj, enc, done) {
 				//Only available on through streams (not on write streams);
 				let push = this.push && this.push.bind(this);
 				try {
-					if (obj && obj.__cmd && opts.ignoreCommands[obj.__cmd] !== true) {
+					if (obj && obj.__cmd && (opts as LeoStreamOptions).ignoreCommands[obj.__cmd] !== true) {
 						let cmd = obj.__cmd.toLowerCase();
 						if (cmd in commands) {
 							commands[cmd].call(this, obj, done, push);
@@ -90,31 +103,35 @@ let ls = module.exports = {
 		}
 
 		return throughCommand;
-	},
-	passthrough: (opts) => {
+	}
+
+	export function passthrough<T>(opts): TransformStream<T, T>  {
 		return new PassThrough(opts);
-	},
-	through: (opts, func, flush) => {
+	}
+	export function through<T, U>(func: LeoTransformFunction<T, U>, flush?: FlushCallback): TransformStream<T, U>;
+	export function through<T, U>(opts: LeoStreamOptions, func: LeoTransformFunction<T, U>, flush?: FlushCallback): TransformStream<T, U>;
+	export function through<T, U>(opts: LeoTransformFunction<T, U> | LeoStreamOptions, func?: LeoTransformFunction<T, U> | FlushCallback, flush?: FlushCallback)  {
 		if (typeof opts === "function") {
-			flush = flush || func;
+			flush = flush || (func as FlushCallback);
 			func = opts;
-			opts = undefined;
+			opts = {};
 		}
-		return through(opts, ls.commandWrap(opts, func), flush ? function(done) {
+		return through2(opts, ls.commandWrap(opts, func), flush ? function(done) {
 			flush.call(this, done, this.push.bind(this));
 		} : null);
-	},
-	writeWrapped: (opts, func, flush) => {
+	}
+
+	export function writeWrapped(opts, func?: any, flush?: any) {
 		if (typeof opts === "function") {
 			flush = flush || func;
 			func = opts;
 			opts = undefined;
 		}
-		return write.obj(opts, ls.commandWrap(opts, func), flush ? function(done) {
+		return FlushWriteStream.obj(opts, ls.commandWrap(opts, func), flush ? function(done) {
 			flush.call(this, done);
 		} : null);
-	},
-	cmd: (watchCommands, singleFunc) => {
+	}
+	export function cmd(watchCommands: any, singleFunc): TransformStream<any, any>  {
 		if (typeof singleFunc == "function") {
 			watchCommands = {
 				[watchCommands]: singleFunc
@@ -126,10 +143,10 @@ let ls = module.exports = {
 			}
 		}
 		return ls.through(watchCommands, (obj, done) => done(null, obj));
-	},
-	buffer: (opts, each, emit, flush) => {
+	}
+	export function buffer<T>(opts, each, emit, flush): BufferedStream<T>  {
 		opts = merge({
-			  time: opts && opts.time ||  {
+			time: opts && opts.time ||  {
 				seconds: 10
 			},
 			size: 1024 * 200,
@@ -138,10 +155,7 @@ let ls = module.exports = {
 			debug: true
 		}, opts);
 
-		let streamType = ls.through;
-		if (opts.writeStream) {
-			streamType = ls.writeWrapped;
-		}
+		let streamType = opts.writeStream ? ls.writeWrapped : ls.through;
 
 		let label = opts.label ? (opts.label + ' ') : '';
 		var size = 0;
@@ -237,7 +251,7 @@ let ls = module.exports = {
 					done();
 				}
 			});
-		});
+		}) as BufferedStream<T>;
 		stream.reset = reset;
 		stream.flush = function(done) {
 			doEmit(false, done);
@@ -246,8 +260,8 @@ let ls = module.exports = {
 			opts = merge(opts, limits);
 		};
 		return stream;
-	},
-	bufferBackoff: function(each, emit, retryOpts, opts, flush) {
+	}
+	export function bufferBackoff(each, emit, retryOpts, opts, flush) {
 		retryOpts = merge({
 			randomisationFactor: 0,
 			initialDelay: 1,
@@ -315,6 +329,7 @@ let ls = module.exports = {
 				});
 			}
 		});
+
 		return this.buffer({
 			writeStream: true,
 			label: opts.label,
@@ -344,20 +359,40 @@ let ls = module.exports = {
 				done();
 			}
 		});
-	},
-	pipeline: pumpify,
-	split: split,
-	gzip: zlib.createGzip,
-	gunzip: zlib.createGunzip,
-	write: write.obj,
-	pipe: pump,
-	stringify: () => {
+	}
+
+	export function pipeline<T1, D extends WritableStream<T1>>(write: WritableStream<T1>, drain: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline<T1, T2, D extends WritableStream<T2>>(write: WritableStream<T1>, t1: TransformStream<T1, T2>, t2: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline<T1, T2, T3, D extends WritableStream<T3>>(write: WritableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline<T1, T2, T3, T4, D extends WritableStream<T4>>(write: WritableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, t4: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline<T1, T2, T3, T4, T5, D extends WritableStream<T5>>(write: WritableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, t4: TransformStream<T4, T5>, t5: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline<T1, T2, T3, T4, T5, T6, D extends WritableStream<T6>>(write: WritableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, t4: TransformStream<T4, T5>, t5: TransformStream<T5, T6>, t6: D, errorCallback?: ErrorCallback): D extends ReadableStream<infer U> ? TransformStream<T1, U> : WritableStream<T1>;
+	export function pipeline(...args: any[]) {
+		return pumpify(...args)
+	}
+
+	export const split = split2;
+	export const gzip = zlib.createGzip;
+	export const gunzip = zlib.createGunzip;
+	export const write = FlushWriteStream.obj;
+
+	export function pipe<T1>(read: ReadableStream<T1>, write: WritableStream<T1>, errorCallback?: ErrorCallback): WritableStream<T1>;
+	export function pipe<T1, T2>(read: ReadableStream<T1>, t1: TransformStream<T1, T2>, write: WritableStream<T2>, errorCallback?: ErrorCallback): WritableStream<T2>;
+	export function pipe<T1, T2, T3>(read: ReadableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, write: WritableStream<T3>, errorCallback?: ErrorCallback): WritableStream<T3>;
+	export function pipe<T1, T2, T3, T4>(read: ReadableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, write: WritableStream<T4>, errorCallback?: ErrorCallback): WritableStream<T4>;
+	export function pipe<T1, T2, T3, T4, T5>(read: ReadableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, t4: TransformStream<T4, T5>, write: WritableStream<T5>, errorCallback?: ErrorCallback): WritableStream<T5>;
+	export function pipe<T1, T2, T3, T4, T5, T6>(read: ReadableStream<T1>, t1: TransformStream<T1, T2>, t2: TransformStream<T2, T3>, t3: TransformStream<T3, T4>, t4: TransformStream<T4, T5>, t5: TransformStream<T5, T6>, write: WritableStream<T6>, errorCallback?: ErrorCallback): WritableStream<T6>;
+	export function pipe(...args: any[]) {
+		return pump(...args)
+	}
+	// export const pipe = pump;
+	export function stringify(): TransformStream<any, string>  {
 		return ls.through((obj, done) => {
 			done(null, JSON.stringify(obj) + "\n");
 		});
-	},
-	parse: (skipErrors = false) => {
-		return pumpify(split(), ls.through((obj, done) => {
+	}
+	export function parse<T>(skipErrors = false): TransformStream<any, T>  {
+		return pumpify(split2(), ls.through<any, string>((obj, done) => {
 			if (!obj) {
 				done();
 			} else {
@@ -370,8 +405,8 @@ let ls = module.exports = {
 				done(null, obj);
 			}
 		}));
-	},
-	fromCSV: function(fieldList, opts) {
+	}
+	export function fromCSV(fieldList, opts): TransformStream<any, any> {
 		opts = merge({
 			headers: fieldList,
 			ignoreEmpty: true,
@@ -382,7 +417,7 @@ let ls = module.exports = {
 		}, opts || {});
 
 		var parse = fastCsv.parse(opts);
-		var transform = ls.through((obj, done) => {
+		var transform = ls.through<any, any>((obj, done) => {
 			for (var i in obj) {
 				if (obj[i] === opts.nullValue) {
 					obj[i] = null;
@@ -391,13 +426,14 @@ let ls = module.exports = {
 			done(null, obj);
 		});
 
+		let errorArgs = arguments;
 		parse.on("error", () => {
-			logger.error(arguments);
+			logger.error(errorArgs);
 		});
 
 		return pumpify(parse, transform);
-	},
-	toCSV: (fieldList, opts) => {
+	}
+	export function toCSV(fieldList, opts): any  {
 		opts = merge({
 			nullValue: "\\N",
 			delimiter: ',',
@@ -422,8 +458,8 @@ let ls = module.exports = {
 				return row;
 			}
 		});
-	},
-	toS3: (Bucket, File) => {
+	}
+	export function toS3(Bucket, File)  {
 		var callback = null;
 		var pass = new PassThrough();
 		s3.upload({
@@ -434,7 +470,7 @@ let ls = module.exports = {
 			logger.log("done uploading", err);
 			callback(err);
 		});
-		return write((s, enc, done) => {
+		return new FlushWriteStream((s, enc, done) => {
 			if (!pass.write(s)) {
 				pass.once('drain', () => {
 					done();
@@ -446,16 +482,16 @@ let ls = module.exports = {
 			callback = cb;
 			pass.end();
 		});
-	},
-	fromS3: (file, opts) => {
+	}
+	export function fromS3(file, opts)  {
 		opts = merge({}, opts);
 		return (opts.s3 || s3).getObject({
 			Bucket: file.bucket || file.Bucket,
 			Key: file.key || file.Key,
 			Range: file.range || undefined
 		}).createReadStream();
-	},
-	asEvent: function(opts) {
+	}
+	export function asEvent(opts) {
 		opts = merge({
 			id: "unknown"
 		}, opts);
@@ -473,8 +509,8 @@ let ls = module.exports = {
 				kinesis_number: opts.kinesis_number(data)
 			});
 		});
-	},
-	log: function(prefix) {
+	}
+	export function log(prefix) {
 		var log = console.log;
 		if (prefix) {
 			log = function() {
@@ -498,8 +534,8 @@ let ls = module.exports = {
 			}
 			callback(null, obj);
 		});
-	},
-	devnull: function(shouldLog = false) {
+	}
+	export function devnull(shouldLog = false): WritableStream<any> {
 		let s = new stream.Writable({
 			objectMode: true,
 			write(chunk, encoding, callback) {
@@ -511,9 +547,9 @@ let ls = module.exports = {
 		} else {
 			return s;
 		}
-	},
-	counter: function(label, records = 10000) {
-		if (typeof label === Number) {
+	}
+	export function counter(label, records = 10000): TransformStream<LeoEvent<any>, LeoEvent<any>> {
+		if (typeof label === 'number') {
 			records = label;
 			label = null;
 		}
@@ -527,8 +563,8 @@ let ls = module.exports = {
 			count % records === 0 && console.log(`${label}${count} ${Date.now()-start} ${o.eid||""}`);
 			d(null, o);
 		})
-	},
-	process: function(id, func, outQueue) {
+	}
+	export function process(id, func, outQueue) {
 		var firstEvent;
 		var units;
 
@@ -538,7 +574,7 @@ let ls = module.exports = {
 		}
 		reset();
 
-		return ls.through((obj, done) => {
+		return ls.through<LeoEvent<any>, LeoEvent<any>>((obj, done) => {
 			if (!firstEvent) {
 				firstEvent = obj;
 			}
@@ -551,6 +587,7 @@ let ls = module.exports = {
 					done(null, {
 						id: id,
 						event_source_timestamp: obj.event_source_timestamp,
+						payload: undefined,
 						correlation_id: {
 							source: obj.event,
 							start: obj.eid,
@@ -574,8 +611,8 @@ let ls = module.exports = {
 				}
 			});
 		});
-	},
-	batch: function(opts) {
+	}
+	export function batch(opts) {
 		if (typeof opts === "number") {
 			opts = {
 				count: opts
@@ -650,6 +687,7 @@ let ls = module.exports = {
 		});
 		stream.options = opts;
 		return stream;
-	},
+	}
+}
 
-};
+export default ls;

@@ -1,7 +1,7 @@
 "use strict";
 
 var extend = require("extend");
-var refUtil = require("../../lib/reference.js");
+var refUtil = require("../../lib/reference");
 var moment = require("moment");
 
 module.exports = function (configure) {

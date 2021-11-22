@@ -4,4 +4,4 @@ node_modules/
 *.swp
 **/test/out/
 .idea
-
+dist

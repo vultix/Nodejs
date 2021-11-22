@@ -1,4 +1,4 @@
-var leo = require("../index.js")({
+var leo = require("../index.ts")({
 	s3: "leo-s3bus-1r0aubze8imm5",
 	firehose: "Leo-FirehoseStream-189A8WXE76MFS",
 	kinesis: "Leo-KinesisStream-ATNV3XQO0YHV",

@@ -7,8 +7,8 @@ module.exports = function(configOverride, botHandler) {
 
 	let config = require("../leoConfigure.js");
 	const logger = require('leo-logger')('test.wrapper');
-	const leosdk = require("../index.js");
-	const refUtil = require("../lib/reference.js");
+	const leosdk = require("../index.ts");
+	const refUtil = require("../lib/reference");
 	const assert = require("../lib/assert.js");
 
 	process.__config = config;

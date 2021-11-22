@@ -1,4 +1,4 @@
-var leo = require("../index.js");
+var leo = require("../index.ts");
 var moment = require("moment");
 
 describe("local", function() {
@@ -14,7 +14,7 @@ describe("local", function() {
 			// 		//console.log("My Batch Map", payload)
 			// 		done(null, payload);
 			// 	}
-			// }, // object or number 
+			// }, // object or number
 			each: (payload, meta, done) => {
 				count++;
 				console.log(count);

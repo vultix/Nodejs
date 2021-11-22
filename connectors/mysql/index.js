@@ -4,7 +4,7 @@ const mysql = require("mysql");
 const logger = require('leo-logger')('connector.mysql');
 const async = require("async");
 
-const leo = require("../../index.js");
+const leo = require("../../index.ts");
 const ls = leo.streams;
 
 const ID_LIMIT = 5000;

@@ -1,4 +1,4 @@
-var leo = require("../index.js");
+var leo = require("../index.ts");
 
 var moment = require("moment");
 
