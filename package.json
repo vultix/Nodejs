@@ -8,8 +8,8 @@
 		"test": "test"
 	},
 	"scripts": {
-		"test": "mocha --recursive -w",
-		"utest": "mocha \"**/*.utest.js\""
+		"test": "mocha --recursive -w --require ts-node/register",
+		"utest": "mocha \"**/*.utest.js\" --require ts-node/register"
 	},
 	"dependencies": {
 		"async": "2.6.2",
@@ -38,6 +38,7 @@
 		"@types/readable-stream": "^2.3.12",
 		"chai": "^4.2.0",
 		"mocha": "6.1.4",
+		"ts-node": "^10.4.0",
 		"typescript": "^4.4.3"
 	},
 	"peerDependencies": {

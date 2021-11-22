@@ -1,4 +1,4 @@
-var leo = require("../index.ts")("LoggingTest", {
+var leo = require("../index")("LoggingTest", {
 	s3: "leo-s3bus-1r0aubze8imm5",
 	firehose: "Leo-BusToS3-3JQJ49ZBNP1P",
 	kinesis: "Leo-KinesisStream-ATNV3XQO0YHV",

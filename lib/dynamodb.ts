@@ -4,18 +4,33 @@ import https from 'https';
 import extend from 'extend';
 import async from 'async';
 import leo_logger from 'leo-logger';
-import {ErrorCallback, DataCallback} from './types';
+import {DataCallback} from './types';
 import LeoConfig from './configuration';
+import {callable} from './util';
 
 const logger = leo_logger("dynamodb");
 // AWS.config.logger = console;
 
-export default class LeoDynamodb {
-	public docClient: AWS.DynamoDB.DocumentClient;
-	private leoConfig: LeoConfig;
+@callable
+export class LeoDynamodb {
+	public docClient = new AWS.DynamoDB.DocumentClient({
+		region: this.leoConfig.region || (this.leoConfig.aws && this.leoConfig.aws.region),
+		maxRetries: 2,
+		convertEmptyValues: true,
+		httpOptions: {
+			connectTimeout: 2000,
+			timeout: 5000,
+			agent: new https.Agent({
+				ciphers: 'ALL',
+				secureProtocol: 'TLSv1_method',
+				// keepAlive: true
+			})
+		},
+		credentials: this.leoConfig.credentials
+	});
 
-	constructor(configure: LeoConfig) {
-		configure.onUpdate((newConfigure) => {
+	constructor(private leoConfig: LeoConfig) {
+		leoConfig.onUpdate((newConfigure) => {
 			logger.log("lib/dynamodb.js config changed");
 			// // TODO: TS - What does this even do? docClient.service doesn't seem to exist
 			// docClient.service.config.update({
@@ -24,26 +39,9 @@ export default class LeoDynamodb {
 			// });
 		});
 
-		process.__config = process.__config || configure;
+		process.__config = process.__config || leoConfig;
 		process.__config.registry = process.__config.registry || {};
-		configure.registry = extend(true, process.__config.registry, configure.registry || {});
-
-		this.leoConfig = configure;
-		this.docClient = new AWS.DynamoDB.DocumentClient({
-			region: configure.region || (configure.aws && configure.aws.region),
-			maxRetries: 2,
-			convertEmptyValues: true,
-			httpOptions: {
-				connectTimeout: 2000,
-				timeout: 5000,
-				agent: new https.Agent({
-					ciphers: 'ALL',
-					secureProtocol: 'TLSv1_method',
-					// keepAlive: true
-				})
-			},
-			credentials: configure.credentials
-		});
+		leoConfig.registry = extend(true, process.__config.registry, leoConfig.registry || {});
 	}
 
 	get(table: string, id: string, callback: DataCallback<AWS.DynamoDB.DocumentClient.AttributeMap>): void;
@@ -277,7 +275,7 @@ export default class LeoDynamodb {
 		var uniquemap = {};
 
 		var results = [];
-		var chunker = chunk(function(items, done) {
+		var chunker = chunk((items, done) => {
 			logger.log(`Batch getting for table: ${table} - ${items.length}`);
 			if (items.length > 0) {
 				var params = {
@@ -585,3 +583,6 @@ let chunk = function(func, opts) {
 		}
 	};
 };
+
+export default LeoDynamodb;
+module.exports = LeoDynamodb;

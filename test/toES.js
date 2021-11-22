@@ -6,7 +6,7 @@ var configure = {
 	kinesis: "Leo-KinesisStream-ATNV3XQO0YHV",
 	region: "us-west-2"
 };
-var leo = require("../index.ts")(configure);
+var leo = require("../index")(configure);
 var ls = leo.streams;
 var moment = require("moment");
 var connectors = require("../connectors")(configure);

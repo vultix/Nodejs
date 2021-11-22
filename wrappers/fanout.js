@@ -19,7 +19,7 @@ const fanoutFactory = (handler, eventPartition, opts = {}) => {
 
 	//logger.log("Fanout start");
 	eventPartition = eventPartition || (event => event.eid);
-	let leo = require("../index.ts");
+	let leo = require("../index");
 	let leoBotCheckpoint = leo.bot.checkpoint;
 	let leoStreamsFromLeo = leo.streams.fromLeo;
 	let leoBotCheckLock = leo.bot.checkLock;

@@ -1,5 +1,5 @@
 "use strict";
-class Ref {
+export default class Ref {
 	opts: any;
 	type: string;
 	id: string;
@@ -86,33 +86,31 @@ class Ref {
 		return null;
 	}
 
-	static new(data, opts) {
+	static new(data, opts): Ref {
 		if (data instanceof Ref) {
 			return data;
 		} else {
 			return new Ref(data, opts);
 		}
 	}
-}
 
-export default {
-	refId: function (data, opts?: any) {
+	static refId(data, opts?: any): string {
 		var obj = this.ref(data, opts);
 		return obj && obj.toString();
-	},
-	ref: function (data, opts?: any): Ref {
+	}
+	static ref(data, opts?: any): Ref {
 		return data && Ref.new(data, opts);
-	},
-	botRefId: function (data, opts?: any) {
+	}
+	static botRefId(data, opts?: any): string {
 		var obj = this.botRef(data, opts);
 		return obj && obj.toString();
-	},
-	botRef: function (data, opts?: any) {
+	}
+	static botRef(data, opts?: any): Ref {
 		return data && Ref.new(data, Object.assign({
 			type: "bot"
 		}, opts));
-	},
-	fixBotReferences: function (bot, opts?: any) {
+	}
+	static fixBotReferences(bot, opts?: any) {
 		opts = Object.assign({
 			checkpoints: false,
 			source: true,
@@ -125,19 +123,19 @@ export default {
 			return bot;
 		}
 		if (opts.id) {
-			bot.id = this.refId(bot.id, "bot");
+			bot.id = Ref.refId(bot.id, "bot");
 		}
 		var settings = bot.lambda && bot.lambda.settings && bot.lambda.settings[0] || {};
 		if (opts.source && settings.source) {
-			settings.source = this.refId(settings.source)
+			settings.source = Ref.refId(settings.source)
 		}
 
 		if (opts.destination && settings.destination) {
-			settings.destination = this.refId(settings.destination);
+			settings.destination = Ref.refId(settings.destination);
 		}
 
 		if (opts.system && bot.system) {
-			bot.system = this.ref(bot.system, "system")
+			bot.system = Ref.ref(bot.system, "system")
 		}
 
 		if (opts.checkpoints) {
@@ -145,14 +143,14 @@ export default {
 			Object.keys(bot.checkpoints).map(type => {
 				var obj = checkpoints[type] = {};
 				Object.keys(bot.checkpoints[type]).map(id => {
-					obj[this.refId(id)] = bot.checkpoints[type][id];
+					obj[Ref.refId(id)] = bot.checkpoints[type][id];
 				});
 			});
 			bot.checkpoints = checkpoints;
 		}
 		return bot;
-	},
-	fixSystemReferences: function (system, opts?: any) {
+	}
+	static fixSystemReferences(system, opts?: any) {
 		opts = Object.assign({
 			checksums: true,
 			crons: true,
@@ -160,21 +158,21 @@ export default {
 		}, opts);
 
 		if (opts.id) {
-			system.id = this.refId(system.id, "system");
+			system.id = Ref.refId(system.id, "system");
 		}
 
 		if (opts.crons && system.crons) {
-			system.crons = system.crons.map(id => this.botRefId(id));
+			system.crons = system.crons.map(id => Ref.botRefId(id));
 		}
 
 		if (opts.checksums && system.checksums) {
 			var checksums = {};
 			Object.keys(system.checksums).map(id => {
-				var refId = this.botRefId(id);
+				var refId = Ref.botRefId(id);
 				var obj = system.checksums[id] || {};
 				checksums[refId] = Object.assign({}, obj, {
 					bot_id: refId,
-					system: this.refId(obj.system, "system")
+					system: Ref.refId(obj.system, "system")
 				});
 			})
 			system.checksums = checksums;
@@ -182,4 +180,6 @@ export default {
 
 		return system;
 	}
-};
+}
+
+module.exports = Ref;

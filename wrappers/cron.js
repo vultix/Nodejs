@@ -5,10 +5,10 @@ let cachedHandler;
 module.exports = function(configOverride, botHandler) {
 	process.resources = process.env.Resources && JSON.parse(process.env.Resources) || {};
 
-	let config = require("../leoConfigure.ts");
+	let config = require("../leoConfigure");
 	//const async = require("async");
 	const logger = require('leo-logger')('cron.wrapper');
-	const leosdk = require("../index.ts");
+	const leosdk = require("../index");
 	//const kms = require("../lib/kms")(leosdk.configuration);
 	const refUtil = require("../lib/reference");
 

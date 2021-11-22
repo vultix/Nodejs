@@ -7,7 +7,7 @@ import moment from 'moment';
 import stream, {PassThrough} from 'stream';
 import https from 'https';
 import AWS from './leo-aws';
-import {FlushWriteStream} from './flushwrite.js';
+import {FlushWriteStream} from './flushwrite';
 import zlib from 'zlib';
 import split2 from 'split2';
 import {obj as pumpify} from 'pumpify';
@@ -691,3 +691,4 @@ export namespace ls {
 }
 
 export default ls;
+module.exports = ls;

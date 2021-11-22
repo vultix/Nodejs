@@ -24,7 +24,7 @@ if (commands[0] == "show") {
 	// @ts-ignore
 	console.log(JSON.stringify(get()[p] || {}, null, 2));
 } else {
-	require("./lib/generateProfile.js")(commands[0], options, null, () => {});
+	require("./lib/generateProfile")(commands[0], options, null, () => {});
 }
 
 function parse(): any {

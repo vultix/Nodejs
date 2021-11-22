@@ -1,4 +1,4 @@
-const leo = require("../index.ts");
+const leo = require("../index");
 
 const ls = leo.streams;
 

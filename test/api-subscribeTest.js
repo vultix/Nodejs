@@ -1,6 +1,6 @@
 "use strict";
 var moment = require("moment");
-var api = require("../api.ts")({
+var api = require("../api")({
 	domainName: "micro.leoinsights.com"
 });
 

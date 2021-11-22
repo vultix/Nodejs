@@ -147,7 +147,7 @@ function fillConfig(node, config, path?: any) {
 
 export function configure(config) {
 	console.log(process.cwd(), currentOpts);
-	return require("../leoConfigure.js");
+	return require("../leoConfigure");
 }
 export function build(rootDir, opts?: any) {
 

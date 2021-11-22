@@ -5,11 +5,11 @@ let cachedHandler;
 module.exports = function(configOverride, botHandler) {
 	process.resources = process.env.Resources && JSON.parse(process.env.Resources) || {};
 
-	let config = require("../leoConfigure.ts");
+	let config = require("../leoConfigure");
 	const logger = require('leo-logger')('test.wrapper');
-	const leosdk = require("../index.ts");
+	const leosdk = require("../index");
 	const refUtil = require("../lib/reference");
-	const assert = require("../lib/assert.js");
+	const assert = require("../lib/assert");
 
 	process.__config = config;
 	const fill = require("../lib/build-config").fillWithTableReferences;

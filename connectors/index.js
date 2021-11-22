@@ -9,7 +9,7 @@ module.exports = function (configure) {
 	configure.registry = extend(true, process.__config.registry, configure.registry || {});
 	return {
 		elasticsearch: {
-			write: require("./elasticsearch/toES.js")(configure).stream
+			write: require("./elasticsearch/toES")(configure).stream
 		}
 	}
 };

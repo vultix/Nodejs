@@ -1,8 +1,8 @@
-var LeoConfiguration = require("../../lib/configuration.ts");
+var LeoConfiguration = require("../../lib/configuration");
 
 function DW(configure) {
 	let configuration = new LeoConfiguration(configure);
-	let api = require("./toDW.js")(configuration);
+	let api = require("./toDW")(configuration);
 	return Object.assign((config) => {
 		return new DW(config)
 	}, {

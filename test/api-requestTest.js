@@ -1,6 +1,6 @@
 process.env.LEO_DEFAULT_PROFILE = "leo";
-var leo = require("../index.ts");
-var api = require("../lib/template/api-request.js");
+var leo = require("../index");
+var api = require("../lib/template/api-request");
 
 var moment = require("moment");
 

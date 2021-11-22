@@ -1,9 +1,11 @@
 "use strict";
 import extend from 'extend';
-import file from './leo-sdk-config.js';
+import file from './leo-sdk-config';
 import type * as AWS from 'aws-sdk';
+import {callable} from './util';
 
-export default class LeoConfig implements LeoBusConfig, LeoAwsConfig {
+@callable
+export class LeoConfig implements LeoBusConfig, LeoAwsConfig {
 	bus?: LeoBusConfig;
 	aws?: LeoAwsConfig;
 	resources?: LeoResourcesConfig;
@@ -132,6 +134,8 @@ export default class LeoConfig implements LeoBusConfig, LeoAwsConfig {
 		newConfig.update = u;
 	}
 }
+export default LeoConfig;
+module.exports = LeoConfig;
 
 export interface LeoBusConfig {
 	s3?: string;

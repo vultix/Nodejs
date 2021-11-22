@@ -3,7 +3,7 @@ import util from 'util';
 import extend from 'extend';
 import moment from 'moment';
 
-export default function (data) {
+export default function api(data) {
 	data = Object.assign({}, data);
 	var bus = data.bus = data.bus || {};
 	var aws = data.aws = data.aws || {};
@@ -74,7 +74,8 @@ export default function (data) {
 			});
 		},
 
-		bot: require("./lib/apis/bot_api.js")(data)
+		bot: require("./lib/apis/bot_api")(data)
 
 	};
 };
+module.exports = api;

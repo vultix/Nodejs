@@ -1,5 +1,5 @@
 "use strict";
-let config = require("../leoConfigure.ts");
+let config = require("../leoConfigure");
 module.exports = function (configOverride, botHandler) {
 	if (!botHandler) {
 		botHandler = configOverride;

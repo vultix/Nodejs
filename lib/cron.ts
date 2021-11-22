@@ -4,15 +4,17 @@ import LeoConfig from './configuration';
 import * as AWS from 'aws-sdk';
 
 import leo_logger from 'leo-logger';
-import refUtil from './reference.js';
+import refUtil from './reference';
 import dynamo from './dynamodb';
 import extend from 'extend';
 import zlib from 'zlib';
 import moment from 'moment';
-import {CallableClass, DataCallback} from './types';
+import {callable} from './util';
+import {DataCallback} from './types';
 
 const logger = leo_logger('leo-cron');
 
+@callable
 export class LeoCron {
 	private CRON_TABLE = this.configure.resources.LeoCron;
 	private SETTINGS_TABLE = this.configure.resources.LeoSettings;
@@ -20,9 +22,6 @@ export class LeoCron {
 	private dynamodb = new dynamo(this.configure);
 
 	constructor(private configure: LeoConfig) {
-		if (!(this instanceof LeoCron)) {
-			return new LeoCron(configure);
-		}
 		process.__config = process.__config || configure;
 		process.__config.registry = process.__config.registry || {};
 		this.configure.registry = extend(true, process.__config.registry, this.configure.registry || {});
@@ -570,7 +569,7 @@ export class LeoCron {
 		var systems = this.configure.registry && this.configure.registry.__cron && this.configure.registry.__cron.systems || {};
 		return systems[id];
 	}
-	get(id, opts, callback: DataCallback<any>) {
+	get(id, opts, callback: DataCallback) {
 		opts = Object.assign({
 			instance: 0,
 			register: true
@@ -1127,4 +1126,5 @@ export class LeoCron {
 		});
 	}
 }
-export default LeoCron as CallableClass<typeof LeoCron, [LeoConfig]>;
+export default LeoCron;
+module.exports = LeoCron;

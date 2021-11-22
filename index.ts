@@ -1,7 +1,7 @@
 "use strict";
 import leoconfig from 'leo-config';
-import ls, {LeoStream} from './lib/stream/leo-stream';
-import logging from './lib/logging.js';
+import LeoStream from './lib/stream/leo-stream';
+import logging from './lib/logging';
 import aws from './lib/leo-aws';
 import * as AWS from 'aws-sdk';
 import fs from 'fs';
@@ -58,7 +58,7 @@ function SDK(id, data?: any): LeoSdk {
 		logger = logging(id, configuration);
 	}
 
-	let leoStream = ls(configuration);
+	let leoStream = new LeoStream(configuration);
 
     let constructor = function(id, data) {
         return SDK(id, data);
@@ -131,7 +131,7 @@ function SDK(id, data?: any): LeoSdk {
 	});
 }
 const defaultSdk = SDK(false);
-export default defaultSdk;
+module.exports = defaultSdk;
 
 export interface LeoSdkConstructor {
     (config: Partial<LeoConfig>): LeoSdk;

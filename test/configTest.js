@@ -6,7 +6,7 @@ const c = {
 	kinesis: "Leo-KinesisStream-ATNV3XQO0YHV",
 	region: "us-west-2"
 };
-var leo = require("../index.ts")(c);
+var leo = require("../index")(c);
 var moment = require("moment");
 var async = require("async");
 

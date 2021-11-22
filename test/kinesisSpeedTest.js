@@ -1,5 +1,5 @@
 "use strict";
-var leo = require("../index.ts");
+var leo = require("../index");
 var moment = require("moment");
 var async = require("async");
 

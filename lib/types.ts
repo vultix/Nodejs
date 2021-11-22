@@ -81,13 +81,3 @@ export interface LeoStatsCheckpoint {
 	(params: any, done: any): any;
 	stream: TransformStream<any, any>;
 }
-
-/**
- * Used to mark the class as callable - this works because of the ES5 compilation target
- */
-export type CallableClass<C extends {new (...args: Args): any}, Args extends any[]> = C & {
-	/**
-	 * @deprecated - use "new" keyword
-	 */
-	(...args: Args): C extends {new (...arsgs: Args): infer U} ? U : never;
-}

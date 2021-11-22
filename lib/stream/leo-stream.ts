@@ -10,8 +10,8 @@ import moment from 'moment';
 import async from 'async';
 import backoff from 'backoff';
 import extend from 'extend';
-import leoS3 from './helper/leos3.js';
-import chunkEventStream from './helper/chunkEventStream.js';
+import leoS3 from './helper/leos3';
+import chunkEventStream from './helper/chunkEventStream';
 import cronlib from '../cron';
 import dynamo from '../dynamodb';
 import refUtil from '../reference';
@@ -19,8 +19,9 @@ import _streams from '../streams';
 import leo_logger from 'leo-logger';
 import {promiseStreams} from 'leo-streams';
 import es from 'event-stream';
-import {CallableClass, LeoEvent, LeoStats, LeoStatsCheckpoint, LeoStreamOptions, StatsStream} from '../types';
+import {LeoEvent, LeoStats, LeoStatsCheckpoint, LeoStreamOptions, StatsStream} from '../types';
 import LeoConfig from '../configuration';
+import {callable} from '../util';
 
 const logger = leo_logger("leo-stream");
 const twoHundredK = 1024 * 200;
@@ -29,9 +30,10 @@ const FIVE_MB_IN_BYTES = 1024 * 1024 * 5;
 var pad = "0000000";
 var padLength = -1 * pad.length;
 
+@callable
 export class LeoStream {
 	configuration = this.configure;
-	cron = cronlib(this.configure);
+	cron = new cronlib(this.configure);
 	dynamodb = new dynamo(this.configure);
 	s3 = new AWS.S3({
 		apiVersion: '2006-03-01',
@@ -2103,4 +2105,5 @@ export class LeoStream {
 	}
 }
 
-export default LeoStream as CallableClass<typeof LeoStream, [LeoConfig]>;
+export default LeoStream;
+module.exports = LeoStream;

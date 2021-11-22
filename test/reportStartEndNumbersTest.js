@@ -1,4 +1,4 @@
-var leo = require("../index.ts");
+var leo = require("../index");
 var moment = require("moment");
 
 describe("local", function () {
