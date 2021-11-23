@@ -8,6 +8,7 @@ import fs from 'fs';
 import ini from 'ini';
 import {execSync} from 'child_process';
 import LeoConfig from './lib/configuration';
+import {LeoMock} from './lib/mock';
 
 function SDK(id, data?: any): LeoSdk {
 	if (typeof id !== "string") {
@@ -132,6 +133,7 @@ function SDK(id, data?: any): LeoSdk {
 }
 const defaultSdk = SDK(false);
 module.exports = defaultSdk;
+export default defaultSdk;
 
 export interface LeoSdkConstructor {
     (config: Partial<LeoConfig>): LeoSdk;
@@ -186,4 +188,7 @@ export interface LeoSdk extends LeoSdkConstructor {
         s3: LeoStream['s3'];
         cloudformation: AWS.CloudFormation
     };
+
+	mocked?: boolean;
+	mock?: LeoMock;
 }

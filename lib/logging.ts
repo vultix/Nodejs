@@ -1,14 +1,14 @@
-var os = require("os");
-var path = require("path");
-var fs = require("fs");
-var AWS = require("./leo-aws");
-var https = require("https");
-var moment = require("moment");
-var uuid = require("uuid");
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import AWS from './leo-aws';
+import https from 'https';
+import moment from 'moment';
+import uuid from 'uuid';
 
-const accessor = {};
+const accessor: {logger?: any} = {};
 
-module.exports = function (id, opts) {
+export default function (id, opts) {
 
 	opts = Object.assign({
 		version: 'latest'
@@ -47,16 +47,18 @@ module.exports = function (id, opts) {
 		});
 	}
 
-	var oldStdOut = process.stdout.write;
-	var oldStdErr = process.stderr.write;
-	process.stdout.write = function (string, encoding, fd) {
-		oldStdOut.apply(process.stdout, arguments);
+	const oldStdOut = process.stdout.write;
+	const oldStdErr = process.stderr.write;
+	process.stdout.write = function (string, encoding, fd?: any) {
+		const resp = oldStdOut.apply(process.stdout, arguments);
 		addMessage(string);
+		return resp
 	};
 
-	process.stderr.write = function (string, encoding, fd) {
-		oldStdErr.apply(process.stderr, arguments);
+	process.stderr.write = function (string, encoding, fd?: any) {
+		const resp = oldStdErr.apply(process.stderr, arguments);
 		addMessage(string);
+		return resp;
 	};
 
 
@@ -78,7 +80,7 @@ module.exports = function (id, opts) {
 				};
 				client.createLogStream(config, (err, data) => {
 					config.sequenceNumber = undefined;
-					fs.writeFile(configFile, JSON.stringify(config, null, 2), (err, data) => {
+					fs.writeFile(configFile, JSON.stringify(config, null, 2), (err) => {
 						callback(err, config);
 					});
 				});
@@ -98,7 +100,7 @@ module.exports = function (id, opts) {
 				} else {
 					console.log("reading log stream", configFile);
 					fs.readFile(configFile, (err, data) => {
-						config = JSON.parse(data);
+						config = JSON.parse(data.toString());
 						callback(err, config);
 					});
 				}
