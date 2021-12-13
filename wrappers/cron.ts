@@ -1,8 +1,10 @@
 "use strict";
 
 
+import {BuiltLeoConfig} from '../lib/build-config';
+
 let cachedHandler;
-module.exports = function(configOverride, botHandler) {
+module.exports = function(configOverride: Partial<BuiltLeoConfig>, botHandler) {
 	process.resources = process.env.Resources && JSON.parse(process.env.Resources) || {};
 
 	let config = require("../leoConfigure");
@@ -58,8 +60,8 @@ module.exports = function(configOverride, botHandler) {
 		process.removeListener('uncaughtException', x);
 	}
 	let theCallback;
-	let theContext = {};
-	let __theEvent = {};
+	let theContext: any = {};
+	let __theEvent: any = {};
 	process.on('uncaughtException', function(err) {
 		console.log(`[LEOCRON]:end:${config.name}:${theContext.awsRequestId}`);
 		logger.error((new Date).toUTCString() + ' uncaughtException:', err.message);
@@ -248,4 +250,16 @@ module.exports = function(configOverride, botHandler) {
 			});
 		}
 	}
+}
+
+declare global {
+	namespace NodeJS {
+		interface Process {
+			resources: any;
+		}
+	}
+}
+
+interface LeoCronConfig {
+
 }

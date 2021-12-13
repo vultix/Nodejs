@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 import extend from 'extend';
-import async from 'async';
+import type * as AWS from 'aws-sdk';
 
 var currentOpts = {};
 
@@ -66,7 +66,10 @@ function getRegexGroups(text, regex, flags) {
 	return e;
 }
 
-function fillConfig(node, config, path?: any) {
+/**
+ * Recursively fills the given node, resolivng any `file://` and `TABLE://` references
+ */
+function fillConfig(node: Record<string, any>, config: BuiltLeoConfig, path?: any) {
 	path = path ? path + "." : "";
 	for (var key in node) {
 		var child = node[key];
@@ -85,7 +88,7 @@ function fillConfig(node, config, path?: any) {
 					}
 					return sum;
 				}, {});
-				var tableData = {
+				var tableData: TableData = {
 					table: table[1],
 					id: {
 						field: table[2],
@@ -115,7 +118,7 @@ function fillConfig(node, config, path?: any) {
 			}
 			node[key] = val;
 		} else if (child && typeof child == "string" && (file = child.match(/^file:\/\/(.*)/))) {
-			var val: any = child;
+			var val = child;
 			if (fs.existsSync(file[1])) {
 				val = fs.readFileSync(file[1], {
 					encoding: "utf-8"
@@ -139,7 +142,7 @@ function fillConfig(node, config, path?: any) {
 			node[key] = child;
 
 		} else {
-			fill(node[key], config, path + key);
+			fillConfig(node[key], config, path + key);
 		}
 	}
 	return config;
@@ -155,8 +158,8 @@ export function build(rootDir, opts?: any) {
 		currentOpts = Object.assign(currentOpts, opts);
 	}
 
-	var config: any = {
-		variables: [],
+	var config: BuiltLeoConfig = {
+		variables: {},
 		settings: {},
 		"test": {
 			"user": 'default',
@@ -388,19 +391,27 @@ export function build(rootDir, opts?: any) {
 	return config;
 
 }
-export function fill(obj, repo, docClient) {
+
+/**
+ * Recursively fills the given node, resolivng any `file://` and `TABLE://` references
+ * // TODO: TS - get a better understanding of TableReferences
+ */
+export function fill(obj: Record<string, any>, repo: BuiltLeoConfig);
+export function fill(obj: TableReferences, repo: BuiltLeoConfig, docClient: AWS.DynamoDB.DocumentClient);
+export function fill(obj: Record<string, any>, repo: BuiltLeoConfig, docClient?: AWS.DynamoDB.DocumentClient) {
 	if (docClient) {
-		return module.exports.fillWithTableReferences(obj, repo, docClient);
+		return fillWithTableReferences(obj, repo, docClient);
 	} else {
 		fillConfig(obj, repo);
 		return obj;
 	}
 }
-export function fillWithTableReferences(obj, repo, docClient) {
+
+export function fillWithTableReferences(obj: TableReferences, repo: BuiltLeoConfig, docClient: AWS.DynamoDB.DocumentClient) {
 	fillConfig(obj, repo);
-	return module.exports.addTableReferences(obj, repo.registry._tableReferences, docClient);
+	return addTableReferences(obj, repo.registry._tableReferences, docClient);
 }
-export function addTableReferences(obj, tables, docClient) {
+export function addTableReferences(obj: TableReferences, tables: TableReferences, docClient: AWS.DynamoDB.DocumentClient) {
 	var keys = Object.keys(tables || {});
 	if (docClient && keys.length) {
 		return new Promise((resolve, reject) => {
@@ -434,7 +445,7 @@ export function addTableReferences(obj, tables, docClient) {
 							}
 							var target = ref.target.split(".");
 							var targetName = target.pop();
-							var parent = target.reduce((obj, key) => obj && obj[key], obj);
+							var parent = target.reduce((obj, key) => obj && obj[key], obj as any);
 							console.log("path", target, targetName, parent, v);
 							if (parent != undefined) {
 								parent[targetName] = v;
@@ -450,4 +461,58 @@ export function addTableReferences(obj, tables, docClient) {
 		return Promise.resolve(obj);
 	}
 
+}
+
+// TODO: What is the purpose of this config? Give it a better name and explanation
+export interface BuiltLeoConfig {
+	variables: Record<string, string>,
+	settings: {},
+	test: {
+		user: 'default',
+		users: {
+			default: {
+				identity: {
+					sourceIp: string
+				}
+			}
+		},
+		request: {}
+	},
+	ui: {
+		version: null,
+		timezone?: string;
+		static: {}
+	},
+	registry: {
+		_tableReferences?: TableReferences
+	},
+	auth: {
+		loadUser: boolean
+	}
+	_meta?: {
+		env: string,
+		region: string,
+		configDir: string,
+		variablesDir: string;
+		microserviceDir: string;
+		systemDir: string;
+	}
+	aws?: any;
+	timezone?: string;
+
+	name?: string;
+	version?: string;
+	type?: string;
+}
+
+
+export type TableReferences = Record<string, TableData[]>;
+export interface TableData {
+	table: string,
+	id: {
+		field: string,
+		value: string;
+	},
+	target: string,
+	options: any
 }
